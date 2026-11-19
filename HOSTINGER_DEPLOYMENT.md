@@ -1,6 +1,7 @@
 # Hostinger Deployment Guide
 
 This project is a monorepo consisting of:
+
 - **Client**: React (Vite + Tailwind CSS SPA)
 - **Server**: Node.js + Express API (TypeScript compiled to `dist/`)
 
@@ -30,7 +31,9 @@ This project is a monorepo consisting of:
 Hostinger VPS (Ubuntu 22.04 / 24.04) allows running Node.js, PM2, and Nginx reverse proxy with SSL.
 
 ### Step 1: Install Node.js, PM2 & Nginx on VPS
+
 SSH into your Hostinger VPS:
+
 ```bash
 # Update package lists
 sudo apt update && sudo apt upgrade -y
@@ -44,6 +47,7 @@ sudo npm install -g pm2
 ```
 
 ### Step 2: Clone & Deploy Project
+
 ```bash
 # Navigate to web root
 cd /var/www
@@ -59,7 +63,9 @@ npm run build
 ```
 
 ### Step 3: Configure Environment Variables
+
 Create the production `.env` in `/var/www/ai-student-counsellor/server/.env`:
+
 ```env
 PORT=4000
 NODE_ENV=production
@@ -76,6 +82,7 @@ GEMINI_MODEL=gemini-3.1-flash-lite
 ```
 
 ### Step 4: Start Backend with PM2
+
 ```bash
 # From /var/www/ai-student-counsellor
 pm2 start ecosystem.config.js
@@ -86,7 +93,9 @@ pm2 startup
 ```
 
 ### Step 5: Configure Nginx & SSL
+
 Copy [nginx.hostinger.conf](file:///d:/macrowdigital/KV-Agent/ai-student-counsellor/nginx.hostinger.conf) to `/etc/nginx/sites-available/yourdomain.com`:
+
 ```bash
 sudo cp nginx.hostinger.conf /etc/nginx/sites-available/yourdomain.com
 # Edit yourdomain.com with nano/vim:
@@ -99,6 +108,7 @@ sudo systemctl restart nginx
 ```
 
 Install free SSL (Certbot):
+
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
@@ -111,6 +121,7 @@ sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
 If you are using **Hostinger Business/Cloud Shared Hosting**:
 
 ### 1. Backend (Node.js App Feature in hPanel)
+
 1. Go to **hPanel** -> **Websites** -> **Node.js**.
 2. Click **Create Application**:
    - **Node.js version**: 20.x
@@ -121,9 +132,11 @@ If you are using **Hostinger Business/Cloud Shared Hosting**:
 4. Click **Run NPM Install** and **Start Application**.
 
 ### 2. Frontend (Static SPA Hosting)
+
 1. Run `npm run build:client` on your machine or CI/CD.
 2. Upload all files from `client/dist/` into your Hostinger `public_html/`.
 3. In `public_html/`, create an `.htaccess` file for React Router single-page app support:
+
 ```apache
 <IfModule mod_rewrite.c>
   RewriteEngine On
