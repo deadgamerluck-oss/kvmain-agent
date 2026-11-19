@@ -19,6 +19,8 @@ export interface AiChatResponse {
   message?: string;
 }
 
+const SESSION_TOKEN_KEY = 'counsellor_session_token';
+
 export const aiChatService = {
   /**
    * Initializes or creates a new conversation session
@@ -34,6 +36,13 @@ export const aiChatService = {
       });
       if (res.ok) {
         const json = await res.json();
+        if (json.sessionToken) {
+          try {
+            sessionStorage.setItem(SESSION_TOKEN_KEY, json.sessionToken);
+          } catch {
+            // ignore
+          }
+        }
         return json.conversationId;
       }
     } catch {
@@ -48,11 +57,24 @@ export const aiChatService = {
   async sendMessage(params: SendAiChatMessageParams): Promise<AiChatResponse> {
     try {
       const baseUrl = getApiBaseUrl();
+      const storedToken = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(SESSION_TOKEN_KEY) : null;
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (storedToken) {
+        headers['Authorization'] = `Bearer ${storedToken}`;
+        headers['X-Session-Token'] = storedToken;
+      }
+
       const res = await fetch(`${baseUrl}/api/ai/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
-        body: JSON.stringify(params)
+        body: JSON.stringify({
+          ...params,
+          sessionToken: storedToken || undefined
+        })
       });
       const data = await res.json();
       return data;
@@ -73,7 +95,15 @@ export const aiChatService = {
   async getConversation(conversationId: string) {
     try {
       const baseUrl = getApiBaseUrl();
+      const storedToken = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(SESSION_TOKEN_KEY) : null;
+      const headers: Record<string, string> = {};
+      if (storedToken) {
+        headers['Authorization'] = `Bearer ${storedToken}`;
+        headers['X-Session-Token'] = storedToken;
+      }
+
       const res = await fetch(`${baseUrl}/api/ai/conversations/${conversationId}`, {
+        headers,
         credentials: 'include'
       });
       if (res.ok) {

@@ -48,8 +48,12 @@ router.post('/conversations', async (req: Request, res: Response) => {
     }
   }
 
+  // In cross-domain deployments (e.g. Hostinger frontend -> Render backend),
+  // browsers block third-party cookies if partition or sameSite=none isn't accepted,
+  // so we also return sessionToken in the JSON payload for header-based auth fallback.
+  const sessionToken = `${sessionId}:${rawSecret}`;
   const isProduction = config.nodeEnv === 'production';
-  res.cookie(config.session.cookieName, `${sessionId}:${rawSecret}`, {
+  res.cookie(config.session.cookieName, sessionToken, {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? 'none' : 'lax',
@@ -60,6 +64,7 @@ router.post('/conversations', async (req: Request, res: Response) => {
     success: true,
     conversationId,
     sessionId,
+    sessionToken,
     channel,
     language: preferred_language
   });
@@ -71,7 +76,18 @@ router.post('/conversations', async (req: Request, res: Response) => {
 // ----------------------------------------------------------------------------
 router.get('/conversations/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
-  const cookieVal = req.cookies?.[config.session.cookieName];
+  // Extract session token from cookie OR authorization header / body fallback (cross-origin resilient)
+  let cookieVal = req.cookies?.[config.session.cookieName];
+  if (!cookieVal) {
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      cookieVal = authHeader.substring(7);
+    } else if (req.headers['x-session-token']) {
+      cookieVal = req.headers['x-session-token'] as string;
+    } else if (req.body.sessionToken) {
+      cookieVal = req.body.sessionToken;
+    }
+  }
   const supabase = getSupabaseAdmin();
 
   if (!supabase) {
@@ -128,7 +144,18 @@ router.get('/conversations/:id', async (req: Request, res: Response) => {
 // ----------------------------------------------------------------------------
 router.post('/chat', async (req: Request, res: Response) => {
   const { conversationId, message, language = 'auto' } = req.body;
-  const cookieVal = req.cookies?.[config.session.cookieName];
+  // Extract session token from cookie OR authorization header / body fallback (cross-origin resilient)
+  let cookieVal = req.cookies?.[config.session.cookieName];
+  if (!cookieVal) {
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      cookieVal = authHeader.substring(7);
+    } else if (req.headers['x-session-token']) {
+      cookieVal = req.headers['x-session-token'] as string;
+    } else if (req.body.sessionToken) {
+      cookieVal = req.body.sessionToken;
+    }
+  }
   const supabase = getSupabaseAdmin();
 
   if (!conversationId || !message || typeof message !== 'string') {
