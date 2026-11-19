@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from '@/lib/apiConfig';
+
 export interface SendAiChatMessageParams {
   conversationId: string;
   message: string;
@@ -23,7 +25,8 @@ export const aiChatService = {
    */
   async createConversation(language = 'en', channel: 'chat' | 'voice' = 'chat'): Promise<string | null> {
     try {
-      const res = await fetch('/api/ai/conversations', {
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/ai/conversations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -44,7 +47,8 @@ export const aiChatService = {
    */
   async sendMessage(params: SendAiChatMessageParams): Promise<AiChatResponse> {
     try {
-      const res = await fetch('/api/ai/chat', {
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -68,7 +72,8 @@ export const aiChatService = {
    */
   async getConversation(conversationId: string) {
     try {
-      const res = await fetch(`/api/ai/conversations/${conversationId}`, {
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/ai/conversations/${conversationId}`, {
         credentials: 'include'
       });
       if (res.ok) {

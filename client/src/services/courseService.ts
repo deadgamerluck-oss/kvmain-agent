@@ -21,7 +21,8 @@ export const courseService = {
     }
 
     try {
-      const res = await fetch('/api/courses');
+      const baseUrl = (await import('@/lib/apiConfig')).getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/courses`);
       if (res.ok) {
         const json = await res.json();
         return { data: json.data || [], source: json.mode === 'supabase' ? 'supabase' : 'mock' };

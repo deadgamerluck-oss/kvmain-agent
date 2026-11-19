@@ -48,11 +48,11 @@ router.post('/conversations', async (req: Request, res: Response) => {
     }
   }
 
-  // Set HTTP-only secure cookie
+  const isProduction = config.nodeEnv === 'production';
   res.cookie(config.session.cookieName, `${sessionId}:${rawSecret}`, {
     httpOnly: true,
-    secure: config.nodeEnv === 'production',
-    sameSite: 'lax',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: 30 * 24 * 60 * 60 * 1000
   });
 
