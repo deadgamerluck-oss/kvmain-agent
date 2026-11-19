@@ -9,31 +9,35 @@ import { config } from './config';
 export const createApp = (): Express => {
   const app = express();
 
-  // Middleware
+  // Global CORS Handling & Preflight Options
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    } else {
+      res.header('Access-Control-Allow-Origin', '*');
+    }
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Session-Token, Cookie'
+    );
+    res.header('Access-Control-Expose-Headers', 'Set-Cookie, Authorization, X-Session-Token');
+
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+    next();
+  });
+
   app.use(cors({
-    origin: (requestOrigin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, health checks)
-      if (!requestOrigin) return callback(null, true);
-
-      // If specific CLIENT_URL matches or wildcard
-      if (
-        config.clientUrl === '*' ||
-        requestOrigin === config.clientUrl ||
-        requestOrigin.endsWith('.hostinger.com') ||
-        requestOrigin.endsWith('.hostingerapp.com') ||
-        requestOrigin.endsWith('.vercel.app') ||
-        requestOrigin.includes('localhost')
-      ) {
-        return callback(null, true);
-      }
-
-      // Allow all valid web domains in production to prevent CORS blocks
-      return callback(null, true);
-    },
+    origin: true,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'X-Session-Token', 'Cookie']
   }));
+  app.options('*', cors({ origin: true, credentials: true }));
   app.use(cookieParser(config.session.cookieSecret));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
